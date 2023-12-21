@@ -1,4 +1,4 @@
-#!js api_version=1.0 name=cq
+#!js api_version=1.0 name=cqv2
 /*global redis */
 
 let pattern = "feed:";
@@ -19,8 +19,13 @@ function logData(client, data) {
 
 //------------------------------------------------
 
-redis.registerKeySpaceTrigger(out_channel + "_cq", pattern, addToStream, {
-  description: "add data  to out_channel",
+redis.registerFunction("createCQ", () => {
+  //Do bookkeeping use redis 
+  //scan or query to get Initial resulsts
+  redis.registerKeySpaceTrigger(out_channel + "_cq", pattern, addToStream, {
+    description: "add data  to out_channel",
+  });
+  return "noop";
 });
 
 /**
@@ -78,7 +83,7 @@ function publishToChannel(client, data) {
     logData(client, data);
   }
 
-  //In case of del or expired event just publish the data as we cannot 
+  //In case of del or expired event just publish the data as we cannot
   //read the value and match on criteria
   if (
     data.event == "del" ||
