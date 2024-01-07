@@ -1,6 +1,7 @@
 #!js api_version=1.0 name=cq
+
 import { redis } from "@redis/gears-api";
-import { outChannel, log, pattern } from "./paras.js";
+import { outChannel, log, pattern, maxEntries } from "./paras.js";
 
 function stringfyData(data) {
   return JSON.stringify(data, (key, value) =>
@@ -9,15 +10,15 @@ function stringfyData(data) {
 }
 
 function logData(data) {
-  redis.log("logEvent: " + stringfyData(data));
+  redis.log(stringfyData(data));
 }
 
 /**
- * Returns true if the event is without data.
+ * Returns true if event key will  have value.
  * @param {string} event
  */
-function isEventWithoutData(event) {
-  return event == "del" || event == "expired" || event == "evicted";
+function eventKeyHasValue(event) {
+  return !(event == "del" || event == "expired" || event == "evicted");
 }
 
 redis.registerKeySpaceTrigger(outChannel + "_cq", pattern, addToStream, {
@@ -25,7 +26,7 @@ redis.registerKeySpaceTrigger(outChannel + "_cq", pattern, addToStream, {
 });
 
 /**
- * Add data to stream
+ * Add event data to outChannel stream
  * @param {import("@redis/gears-api").NativeClient} client
  * @param {Object} data
  * @returns
@@ -35,22 +36,30 @@ function addToStream(client, data) {
     logData(data);
   }
 
-  //if event is without data we cannot match on criteria we will just notify
-  if (isEventWithoutData(data.event)) {
-    //TODO: Righplace to trim stream here?
+  //if event key is without value we cannot match on criteria we just notify the consumer
+  if (!eventKeyHasValue(data.event)) {
+    //trim the stream first
+    client.call("XTRIM", outChannel, "MAXLEN", "~", maxEntries.toString());
     client.call("XADD", outChannel, "*", "event", data.event, "key", data.key);
     return;
   }
 
-  if (client.call("type", data.key) != "hash") {
+  //check type of key
+  if (client.call("type", data.key) != "ReJSON-RL") {
     return;
   }
+  
+  //get the key value
+  const value = client.call("JSON.GET", data.key);
+  if (log) {
+    logData("value: " + value);
+  }
+  const jsonValue = JSON.parse(value);
 
-  let hashFV = client.call("HGETALL", data.key);
-
-  if (hashFV["name"] == "test") {
-    let fv = Object.entries(hashFV).flat(2);
-    //TODO: Righplace to trim stream here?
+  //check if the key value matches the criteria
+  if (jsonValue[0].name == "test") {
+    //trim the stream first
+    client.call("XTRIM", outChannel, "MAXLEN", "~", maxEntries.toString());
     client.call(
       "XADD",
       outChannel,
@@ -59,43 +68,8 @@ function addToStream(client, data) {
       data.event,
       "key",
       data.key,
-      ...fv
+      "value",
+      value
     );
-  }
-}
-
-/**
- * Publish to a channel
- * @param {import("@redis/gears-api").NativeClient} client
- * @param {object} data
- * @returns
- */
-function publishToChannel(client, data) {
-  if (log) {
-    logData( data);
-  }
-
-  //In case of del or expired event just publish the data as we cannot
-  //read the value and match on criteria
-  if (isEventWithoutData(data.event)) {
-    client.call(
-      "PUBLISH",
-      outChannel,
-      ["event", data.event, "key", data.key].join()
-    );
-    return;
-  }
-
-  if (client.call("TYPE", data.key) != "hash") {
-    return;
-  }
-
-  let hashFV = client.call("HGETALL", data.key);
-
-  if (hashFV["name"] == "test") {
-    let fv = Object.entries(hashFV).flat(2);
-    //ToDo do efficiently
-    fv = ["event", data.event, "key", data.key].concat(fv);
-    client.call("PUBLISH", outChannel, fv.join());
   }
 }

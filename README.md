@@ -12,32 +12,18 @@ Basic flow:
 
 Start redis stack `docker run -it  --name redis-stack -p 6379:6379 -p 8001:8001    --rm redis/redis-stack:latest`
 
-Load the script `redis-cli -x TFUNCTION LOAD REPLACE < cq.js`
-Add  a hash with key prefix `feed:` and a field value `name test`
+To install the listner `npm run deploy -- -r redis://localhost:6379`
 
-```
-hset feed:1 name test value 5
-hset feed:2 name test2 value 8
-del feed:1 
-hset feed:3 name test value 5
-expire feed:3 5
-```
+To test `npm run test`
 
 The trigger function will add an entry to a stream that the application can use to get notification on data
-`xrange feed_out - + `
-
-### To crash V2
-```bash
-redis-cli -x TFUNCTION LOAD REPLACE < cqv2.js
-redis-cli TFCALL cqv2.createCQ 0 
-```
-
+`xrange feed_out - +`
 
 
 ## To DO:
-* Refine DX with hash and then use JSON
+* ~~Refine DX with hash and then use JSON~~
 * use Search to load initail state of world
 * Stable view
-* Clean up after client disconnects OOM!
+* ~~Clean up after client disconnects OOM!~~ Added maxEtries parameter to trim the stream
 * SQL like where clause over Dictionary and  JSON (Find library JSONPath?)
 

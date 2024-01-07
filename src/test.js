@@ -7,19 +7,17 @@ client.on("error", (err) => console.log("Redis Client Error", err));
 
 await client.connect();
 
-let subClient = client.duplicate();
+/* let subClient = client.duplicate();
 await subClient.connect();
 
 subClient.subscribe(outChannel, (message) => {
   console.log(`Received message: ${message}`);
-});
+}); */
 
-
-let streamClient = client.duplicate();
+const streamClient = client.duplicate();
 await streamClient.connect();
-console.log("a");
 (async () => {
-  let response = await streamClient.xRead(
+  const response = await streamClient.xRead(
     commandOptions({
       isolated: false,
     }),
@@ -34,21 +32,28 @@ console.log("a");
       BLOCK: 1000,
     }
   );
+  console.log(response);
   if (response != null) {
-    console.log(response);
-  } else {
-    console.log(response);
-  }
-
+    console.log("stream: " + response[0].name);
+    console.log(response[0].messages[0]);
+  } else  {
+    console.log("no data");
+  } 
 })();
 
+await new Promise((r) => setTimeout(r, 10));
 (async () => {
-  await client.hSet(pattern + "1", { name: "test", value: 6 });
-  //await client.hSet(pattern + "2", { name: "notest", value: 8 });
-  return 1
+  await client.json.set(pattern + "2", "$", {
+    name: "test2",
+    value: { answer: 42 },
+  });
+  await client.json.set(pattern + "1", "$", {
+    name: "test",
+    value: { answer: 42 },
+  });
 })();
+await new Promise((r) => setTimeout(r, 1000));
 
-/*client.disconnect();
-subClient.disconnect();
-streamClient.disconnect();*/
-
+client.disconnect();
+//subClient.disconnect();
+streamClient.disconnect();
