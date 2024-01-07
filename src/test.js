@@ -36,9 +36,9 @@ await streamClient.connect();
   if (response != null) {
     console.log("stream: " + response[0].name);
     console.log(response[0].messages[0]);
-  } else  {
+  } else {
     console.log("no data");
-  } 
+  }
 })();
 
 await new Promise((r) => setTimeout(r, 10));
@@ -52,8 +52,8 @@ await new Promise((r) => setTimeout(r, 10));
     value: { answer: 42 },
   });
 })();
-await new Promise((r) => setTimeout(r, 1000));
 
+await new Promise((r) => setTimeout(r, 1000));
 client.disconnect();
 //subClient.disconnect();
 streamClient.disconnect();

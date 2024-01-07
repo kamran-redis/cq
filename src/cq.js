@@ -48,7 +48,7 @@ function addToStream(client, data) {
   if (client.call("type", data.key) != "ReJSON-RL") {
     return;
   }
-  
+
   //get the key value
   const value = client.call("JSON.GET", data.key);
   if (log) {
@@ -60,16 +60,6 @@ function addToStream(client, data) {
   if (jsonValue[0].name == "test") {
     //trim the stream first
     client.call("XTRIM", outChannel, "MAXLEN", "~", maxEntries.toString());
-    client.call(
-      "XADD",
-      outChannel,
-      "*",
-      "event",
-      data.event,
-      "key",
-      data.key,
-      "value",
-      value
-    );
+    client.call("XADD", outChannel, "*", "event", data.event, "key", data.key, "value", value);
   }
 }
