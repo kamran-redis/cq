@@ -1,6 +1,7 @@
 #!js api_version=1.0 name=cq
 
 import { redis } from "@redis/gears-api";
+import jp from 'jsonpath';
 import { outChannel, log, pattern, maxEntries } from "./paras.js";
 
 function stringfyData(data) {
