@@ -32,34 +32,38 @@ redis.registerKeySpaceTrigger(outChannel + "_cq", pattern, addToStream, {
  * @returns
  */
 function addToStream(client, data) {
-  if (log) {
-    logData(data);
-  }
+  try {
+    if (log) {
+      logData(data);
+    }
 
-  //if event key is without value we cannot match on criteria we just notify the consumer
-  if (!eventKeyHasValue(data.event)) {
-    //trim the stream first
-    client.call("XTRIM", outChannel, "MAXLEN", "~", maxEntries.toString());
-    client.call("XADD", outChannel, "*", "event", data.event, "key", data.key);
-    return;
-  }
+    //if event key is without value we cannot match on criteria we just notify the consumer
+    if (!eventKeyHasValue(data.event)) {
+      //trim the stream first
+      client.call("XTRIM", outChannel, "MAXLEN", "~", maxEntries.toString());
+      client.call("XADD", outChannel, "*", "event", data.event, "key", data.key);
+      return;
+    }
 
-  //check type of key
-  if (client.call("type", data.key) != "ReJSON-RL") {
-    return;
-  }
+    //check type of key
+    if (client.call("type", data.key) != "ReJSON-RL") {
+      return;
+    }
 
-  //get the key value
-  const value = client.call("JSON.GET", data.key);
-  if (log) {
-    logData("value: " + value);
-  }
-  const jsonValue = JSON.parse(value);
+    //get the key value
+    const value = client.call("JSON.GET", data.key);
+    if (log) {
+      logData("value: " + value);
+    }
+    const jsonValue = JSON.parse(value);
 
-  //check if the key value matches the criteria
-  if (jsonValue[0].name == "test") {
-    //trim the stream first
-    client.call("XTRIM", outChannel, "MAXLEN", "~", maxEntries.toString());
-    client.call("XADD", outChannel, "*", "event", data.event, "key", data.key, "value", value);
+    //check if the key value matches the criteria
+    if (jsonValue[0].name == "test") {
+      //trim the stream first
+      client.call("XTRIM", outChannel, "MAXLEN", "~", maxEntries.toString());
+      client.call("XADD", outChannel, "*", "event", data.event, "key", data.key, "value", value);
+    }
+  } catch (e) {
+    redis.log(e)
   }
 }

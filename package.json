@@ -1,7 +1,7 @@
 {
   "name": "cq",
   "version": "0.1",
-  "description": "continious query example",
+  "description": "continious query example with redis",
   "main": "",
   "scripts": {
     "deploy": "gears-api src/cq.js",
