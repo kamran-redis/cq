@@ -1,8 +1,10 @@
 #!js api_version=1.0 name=cq
 
 import { redis } from "@redis/gears-api";
-import jp from 'jsonpath';
 import { outChannel, log, pattern, maxEntries } from "./paras.js";
+//import { jsonPath } from "./jsonpath.js";
+//import {JSONPath} from 'jsonpath-plus';
+
 
 function stringfyData(data) {
   return JSON.stringify(data, (key, value) =>
@@ -58,6 +60,8 @@ function addToStream(client, data) {
     }
     const jsonValue = JSON.parse(value);
 
+    //test();
+
     //check if the key value matches the criteria
     if (jsonValue[0].name == "test") {
       //trim the stream first
@@ -67,4 +71,25 @@ function addToStream(client, data) {
   } catch (e) {
     redis.log(e)
   }
+}
+
+function test() {
+  try {
+    redis.log("Starting test");
+    /**const data = [{ "name": "test", "value": { "answer": 80 } }];
+    const result0 = jsonPath(data, "$[?(@.name=='test')]")
+    redis.log(result0)
+
+    const data2 = [{ "name": "test2", "value": { "answer": 80 } }];
+    redis.log(data2)
+    const result2 = jsonPath(data2, "$[?(@.name=='test')]")
+    redis.log(result2)**/
+    const result2 = JSONPath({json: data,path: "$[?(@.name=='test')]"});
+    console.log(result2);
+    redis.log("Ending test");
+
+  } catch (error) {
+    redis.log(error);
+  }
+
 }
