@@ -1,7 +1,12 @@
 import { createClient, commandOptions } from "redis";
 import { outChannel, pattern } from "./paras.js";
+import process from 'process';
 
-const client = createClient();
+const args = process.argv.slice(2);
+const url = args[0]
+const client = createClient({
+  url: url
+});
 
 client.on("error", (err) => console.log("Redis Client Error", err));
 
